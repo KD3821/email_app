@@ -42,7 +42,7 @@ class User(AbstractBaseUser):
 
     objects = UserManager()
 
-    USERNAME_FIELD = "email"
+    USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
     class Meta:
@@ -89,9 +89,9 @@ class OAuthAccessToken(models.Model):
 
 class OAuthRefreshToken(models.Model):
     user = ForeignKey(User, on_delete=models.CASCADE, verbose_name='Для пользователя')
-    token = CharField(max_length=300, verbose_name='OAuth Access')
-    access_token = ForeignKey(OAuthAccessToken, on_delete=models.SET_NULL, verbose_name='Годен до', null=True, blank=True)
-    revoked = BooleanField(default=False, null=True, blank=True)
+    token = CharField(max_length=300, verbose_name='OAuth Refresh')
+    access_token = ForeignKey(OAuthAccessToken, on_delete=models.SET_NULL, verbose_name='Access', null=True, blank=True)
+    revoked = BooleanField(default=False)
 
     class Meta:
         verbose_name = 'OAuth Refresh Токен'
