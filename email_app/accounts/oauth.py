@@ -16,9 +16,10 @@ CLIENT_SECRET = os.getenv('CLIENT_SECRET')
 JWT_SECRET = os.getenv('JWT_SECRET')
 
 
-def validate_oauth_response(response):
+def valid_oauth_response(response):
     if response.status_code != requests.codes.ok:
-        return HttpResponseForbidden("OAuth Not Allowed")
+        return False
+    return True
 
 
 def check_oauth_password(request_data):
@@ -81,8 +82,25 @@ def refresh_oauth_access_token(token: OAuthRefreshToken):
             'token': token.token
         }
     )
-    validate_oauth_response(response)
-    create_oauth_tokens(response)
+    if valid_oauth_response(response):
+        create_oauth_tokens(response)
+    return response
+
+
+def revoke_oauth_refresh_token(token: OAuthRefreshToken):
+    token.revoked = True
+    token.save()
+    response = requests.post(
+        url=f'{AUTH_URL}/revoke_token/',
+        json={
+            'client_id': CLIENT_ID,
+            'client_secret': CLIENT_SECRET,
+            'token': token.token
+        }
+    )
+    if not valid_oauth_response(response):
+        print('need queue')
+        pass  # add to queue for retry
     return response
 
 
@@ -95,11 +113,16 @@ def introspect_token(token: OAuthAccessToken | OAuthRefreshToken):
             'token': token.token
         }
     )
-    validate_oauth_response(response)
-    introspect_data = response.json()
-    data = {
-        'refresh': introspect_data.get('refresh'),
-        'active': introspect_data.get('active'),
-        'revoke': introspect_data.get('revoke')
-    }
+    if valid_oauth_response(response):
+        introspect_data = response.json()
+        data = {
+            'refresh': introspect_data.get('refresh'),
+            'active': introspect_data.get('active'),
+            'revoke': introspect_data.get('revoke')
+        }
+    else:
+        data = {
+            'active': False,
+            'error': 'OAuth Server Error'
+        }
     return data

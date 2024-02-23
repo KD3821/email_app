@@ -90,7 +90,7 @@ class OAuthAccessToken(models.Model):
 class OAuthRefreshToken(models.Model):
     user = ForeignKey(User, on_delete=models.CASCADE, verbose_name='Для пользователя')
     token = CharField(max_length=300, verbose_name='OAuth Refresh')
-    access_token = ForeignKey(OAuthAccessToken, on_delete=models.SET_NULL, verbose_name='Access', null=True, blank=True)
+    access_token = ForeignKey(OAuthAccessToken, on_delete=models.CASCADE, verbose_name='Access', related_name='refresh')
     revoked = BooleanField(default=False)
 
     class Meta:

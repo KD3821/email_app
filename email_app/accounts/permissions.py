@@ -6,9 +6,9 @@ from django.contrib.auth.models import AnonymousUser
 from django.utils.encoding import force_str
 from django.utils import timezone
 
-from .models import OAuthRefreshToken
+from .models import OAuthRefreshToken, OAuthAccessToken
 from .oauth import introspect_token
-from .tasks import rotate_refresh_token
+from .tasks import rotate_access_token
 
 
 class AnonymousUserValidationError(APIException):
@@ -25,12 +25,12 @@ class AnonymousUserValidationError(APIException):
 
 
 class OAuthPermission(BasePermission):
-    message = 'OAuth credentials are not provided'
+    message = 'OAuth credentials are not provided. Please Sign-In with OAuth'
 
     def has_permission(self, request, view):
         if isinstance(request.user, AnonymousUser):
             raise AnonymousUserValidationError(
-                "Access Denied. Please Sign-in.", "AccessToken", status_code=status.HTTP_403_FORBIDDEN
+                "Access Denied. Sign-In required.", "AccessToken", status_code=status.HTTP_403_FORBIDDEN
             )
 
         now = timezone.now()
@@ -46,11 +46,25 @@ class OAuthPermission(BasePermission):
 
         data = introspect_token(token)
 
-        if data.get('refresh'):
-            rotate_refresh_token.delay(token.pk)
+        if data.get('error'):
+            self.message = data.get('error')
 
-        if data.get('revoke') and isinstance(token, OAuthRefreshToken):
-            token.revoked = True
-            token.save()
+        if data.get('refresh'):
+            if isinstance(token, OAuthAccessToken):
+                token_id = token.refresh.first().pk
+            else:
+                token_id = token.pk
+
+            rotate_access_token.delay(token_id)
+
+        if data.get('revoke'):
+            if isinstance(token, OAuthRefreshToken):
+                token_to_revoke = token
+            else:
+                token_to_revoke = token.refresh.first()
+
+            if not token_to_revoke.revoked:
+                token_to_revoke.revoked = True
+                token_to_revoke.save()
 
         return data.get('active')

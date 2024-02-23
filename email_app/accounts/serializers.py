@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
 from django.contrib import auth
 
@@ -66,3 +67,19 @@ class LoginSerializer(serializers.ModelSerializer):
             'tokens': user.tokens
         }
 
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+    default_error_messages = {'bad_token': 'Токен не действительный'}
+
+    def validate(self, data):
+        self.token = data.get('refresh')
+        return data
+
+    def save(self, **kwargs):
+        try:
+            token = RefreshToken(self.token)
+            token.blacklist()
+        except TokenError:
+            self.fail('bad_token')

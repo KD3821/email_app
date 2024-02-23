@@ -1,8 +1,11 @@
+import os
 import json
+
+from django.http import HttpResponseForbidden
 
 from .oauth import (
     check_oauth_password,
-    validate_oauth_response,
+    valid_oauth_response,
     create_oauth_tokens,
 )
 
@@ -12,14 +15,16 @@ class RequestOAuthMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        if request.method == 'POST':
+        if request.method == 'POST' and request.path == os.getenv('AUTH_LOGIN_URL'):
             try:
                 req_body_dict = json.loads(request.body)
 
                 if 'email' and 'password' in req_body_dict.keys():
+
                     r = check_oauth_password(req_body_dict)
 
-                    validate_oauth_response(r)
+                    if not valid_oauth_response(r):
+                        return HttpResponseForbidden("OAuth Not Allowed")
 
                     create_oauth_tokens(r)
 
