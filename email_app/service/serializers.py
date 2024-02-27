@@ -26,6 +26,7 @@ class CampaignSerializer(serializers.ModelSerializer):
     class Meta:
         model = Campaign
         fields = [
+            'id',
             'start_at',
             'finish_at',
             'text',

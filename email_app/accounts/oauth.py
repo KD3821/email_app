@@ -1,8 +1,10 @@
 import os
 from datetime import datetime
+import urllib3
 
 import jwt
 import requests
+from requests.adapters import HTTPAdapter, Retry
 
 from django.http import HttpResponseForbidden
 from django.utils import timezone
@@ -23,15 +25,22 @@ def valid_oauth_response(response):
 
 
 def check_oauth_password(request_data):
-    response = requests.post(
-        url=f'{AUTH_URL}/tokens/',
-        json={
-            'username': request_data.get('email'),
-            'password': request_data.get('password'),
-            'client_id': CLIENT_ID,
-            'client_secret': CLIENT_SECRET
-        }
-    )
+    s = requests.Session()
+    retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504])
+    s.mount('http://', HTTPAdapter(max_retries=retries))
+    try:
+        response = s.post(
+            url=f'{AUTH_URL}/tokens/',
+            json={
+                'username': request_data.get('email'),
+                'password': request_data.get('password'),
+                'client_id': CLIENT_ID,
+                'client_secret': CLIENT_SECRET
+            }
+        )
+    except (urllib3.exceptions.MaxRetryError, requests.exceptions.ConnectionError):
+        response = requests.models.Response()
+        response.status_code = 500
     return response
 
 

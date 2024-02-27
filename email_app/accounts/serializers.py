@@ -18,9 +18,13 @@ class RegisterSerializer(serializers.ModelSerializer):
         email = attrs.get('email', '')
         username = attrs.get('username', '')
         if not username.isalnum():
-            raise serializers.ValidationError('Имя пользователя может содержать только цифры и буквы (без пробелов)')
+            raise serializers.ValidationError({
+                'username': ['Имя пользователя может содержать только цифры и буквы (без пробелов)']
+            })
         if email.index('@') == -1 and email.index('.') == -1:
-            raise serializers.ValidationError('Некорректный email')
+            raise serializers.ValidationError(
+                {'email': ['Некорректный email']}
+            )
         attrs['email'] = email.lower()  # try
         return attrs
 
@@ -56,11 +60,17 @@ class LoginSerializer(serializers.ModelSerializer):
         password = attrs.get('password', '')
         user = auth.authenticate(email=email, password=password)
         if not user:
-            raise AuthenticationFailed('Неправильный логин или пароль. Попробуйте еще раз')
+            raise AuthenticationFailed({
+                'detail': ['Неправильный логин или пароль. Попробуйте еще раз']
+            })
         if not user.is_active:
-            raise AuthenticationFailed('Аккаунт не активен, свяжитесь с поддержкой.')
+            raise AuthenticationFailed({
+                'detail': ['Аккаунт не активен, свяжитесь с поддержкой.']
+            })
         if not user.is_verified:
-            raise AuthenticationFailed('Email еще не подтвержден.')
+            raise AuthenticationFailed({
+                'detail': ['Email еще не подтвержден.']
+            })
         return {
             'email': user.email,
             'username': user.username,

@@ -1,7 +1,7 @@
 import os
 import json
 
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponseBadRequest
 
 from .oauth import (
     check_oauth_password,
@@ -24,7 +24,9 @@ class RequestOAuthMiddleware:
                     r = check_oauth_password(req_body_dict)
 
                     if not valid_oauth_response(r):
-                        return HttpResponseForbidden("OAuth Not Allowed")
+                        if r.status_code == 500:
+                            return HttpResponseBadRequest('Сервис не доступен. Мы работаем, чтобы это исправить.')
+                        return HttpResponseForbidden('Доступ к сервису ограничен - обратитесь в поддержку.')
 
                     create_oauth_tokens(r)
 
