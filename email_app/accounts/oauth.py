@@ -18,7 +18,7 @@ CLIENT_SECRET = os.getenv('CLIENT_SECRET')
 JWT_SECRET = os.getenv('JWT_SECRET')
 
 
-def valid_oauth_response(response):
+def valid_oauth_response(response):  # extend response validation
     if response.status_code != requests.codes.ok:
         return False
     return True

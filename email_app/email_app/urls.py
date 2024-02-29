@@ -8,11 +8,12 @@ from drf_spectacular.views import (
 from django.contrib import admin
 from django.urls import path, include
 
-from service.views import CampaignViewSet
+from service.views import CampaignViewSet, CustomerViewSet
 
 
 router = DefaultRouter()
 router.register(r'campaigns', CampaignViewSet, basename='campaigns')
+router.register(r'customers', CustomerViewSet, basename='customers')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

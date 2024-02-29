@@ -15,7 +15,9 @@ class RequestOAuthMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        if request.method == 'POST' and request.path == os.getenv('AUTH_LOGIN_URL'):
+        response = self.get_response(request)
+
+        if response.status_code == 200 and request.method == 'POST' and request.path == os.getenv('AUTH_LOGIN_URL'):
             try:
                 req_body_dict = json.loads(request.body)
 
@@ -32,7 +34,5 @@ class RequestOAuthMiddleware:
 
             except json.decoder.JSONDecodeError:
                 pass
-
-        response = self.get_response(request)
 
         return response

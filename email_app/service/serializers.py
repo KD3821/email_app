@@ -14,6 +14,7 @@ class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
         fields = [
+            'id',
             'phone',
             'carrier',
             'tag',
@@ -30,7 +31,8 @@ class CampaignSerializer(serializers.ModelSerializer):
             'start_at',
             'finish_at',
             'text',
-            'params'
+            'params',
+            'status'
         ]
 
     def validate(self, attrs):

@@ -2,6 +2,8 @@ from django.utils import timezone
 from django.db import models
 from django.db.models import CharField, TextField, DateTimeField, ForeignKey, JSONField, DecimalField
 
+from accounts.models import User
+
 
 class Campaign(models.Model):
     LAUNCHED = 'launched'
@@ -12,6 +14,7 @@ class Campaign(models.Model):
         (SCHEDULED, 'запланирована'),
         (CANCELED, 'отменена')
     )
+    owner = ForeignKey(User, verbose_name='Владелец', on_delete=models.SET_NULL, null=True, blank=True, related_name='campaigns')
     created_at = DateTimeField(default=timezone.now, verbose_name='Дата создания')
     start_at = DateTimeField(verbose_name='Время запуска', null=True, blank=True)
     finish_at = DateTimeField(verbose_name='Время завершения', null=True, blank=True)
@@ -40,6 +43,7 @@ class Customer(models.Model):
         (TELE2, 'теле2'),
         (YOTA, 'йота')
     )
+    owner = ForeignKey(User, verbose_name='Владелец', on_delete=models.SET_NULL, null=True, blank=True, related_name='customers')
     phone = DecimalField(max_digits=11, decimal_places=0, verbose_name='Номер телефона', null=True, blank=True)
     carrier = CharField(max_length=10, choices=CARRIER_NAMES, verbose_name='Код оператора')
     tag = CharField(max_length=20, verbose_name='Тег', null=True, blank=True)
@@ -64,6 +68,7 @@ class Message(models.Model):
         (PROCESSING, 'в обработке'),
         (CANCELED, 'отменено')
     )
+    owner = ForeignKey(User, verbose_name='Владелец', on_delete=models.SET_NULL, null=True, blank=True, related_name='messages')
     campaign = ForeignKey(Campaign, verbose_name='Рассылка', on_delete=models.SET_NULL, null=True, blank=True, related_name='messages')
     customer = ForeignKey(Customer, verbose_name='Клиент', on_delete=models.SET_NULL, null=True, blank=True, related_name='messages')
     sent_at = DateTimeField(default=timezone.now, verbose_name='Время отправки')

@@ -1,13 +1,24 @@
 from rest_framework.viewsets import ModelViewSet
 
-from .models import Campaign
-from .serializers import CampaignSerializer
+from .permissions import IsOwner
 from accounts.permissions import OAuthPermission
+from .serializers import (
+    CampaignSerializer,
+    CustomerSerializer,
+)
 
 
 class CampaignViewSet(ModelViewSet):
     serializer_class = CampaignSerializer
-    permission_classes = [OAuthPermission]
+    permission_classes = [IsOwner, OAuthPermission]
 
     def get_queryset(self):
-        return Campaign.objects.all()
+        return self.request.user.campaigns.all()
+
+
+class CustomerViewSet(ModelViewSet):
+    serializer_class = CustomerSerializer
+    permission_classes = [IsOwner, OAuthPermission]
+
+    def get_queryset(self):
+        return self.request.user.customers.all()
