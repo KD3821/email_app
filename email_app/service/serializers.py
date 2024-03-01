@@ -22,7 +22,7 @@ class CustomerSerializer(serializers.ModelSerializer):
         ]
 
 
-class CampaignSerializer(serializers.ModelSerializer):
+class ReadCampaignSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Campaign
@@ -35,12 +35,31 @@ class CampaignSerializer(serializers.ModelSerializer):
             'status'
         ]
 
+
+class WriteCampaignSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Campaign
+        fields = [
+            'start_at',
+            'finish_at',
+            'text',
+            'params'
+        ]
+
     def validate(self, attrs):
         instance = getattr(self, 'instance', None)
         finish_at = attrs.get('finish_at')
         if finish_at <= timezone.now():
             logger.info(f'Время завершения рассылки [{instance}] указано не верно: [{finish_at}]')
             raise serializers.ValidationError({
-                'error': ['Время завершения рассылки не может быть в прошлом.']
+                'error': [f'Время завершения рассылки не может быть в прошлом: {finish_at}']
             })
         return attrs
+
+    def create(self, validated_data):
+        date = timezone.now()
+        validated_data['owner'] = self.context.get('request').user
+        if date < validated_data.get('start_at'):
+            validated_data['status'] = Campaign.SCHEDULED
+        return Campaign.objects.create(**validated_data)
