@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from django.utils import timezone
 
-from .models import Campaign, Customer
+from .models import Campaign, Customer, Message
 
 logger = logging.getLogger(__name__)
 
@@ -63,3 +63,28 @@ class WriteCampaignSerializer(serializers.ModelSerializer):
         if date < validated_data.get('start_at'):
             validated_data['status'] = Campaign.SCHEDULED
         return Campaign.objects.create(**validated_data)
+
+
+class MessageSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Message
+        fields = [
+            'id',
+            'campaign',
+            'customer',
+            'sent_at',
+            'status'
+        ]
+
+
+class CampaignMessagesSerializer(serializers.ModelSerializer):
+    customer = CustomerSerializer()
+
+    class Meta:
+        model = Message
+        fields = [
+            'customer',
+            'sent_at',
+            'status'
+        ]

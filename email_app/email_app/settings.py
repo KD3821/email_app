@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'drf_spectacular_sidecar',
     'django_celery_results',
+    'channels',
 
     'accounts',
     'service',
@@ -73,6 +74,7 @@ SPECTACULAR_SETTINGS = {
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'silk.middleware.SilkyMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -104,6 +106,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'email_app.wsgi.application'
+
+ASGI_APPLICATION = 'email_app.asgi.application'
 
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -157,7 +161,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'static/'
+STATIC_ROOT = BASE_DIR / 'static'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
