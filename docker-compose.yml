@@ -22,3 +22,13 @@ services:
     container_name: email_app_brocker
     ports:
       - "5672:5672"
+  channels:
+    image: redis:6.2-alpine
+    container_name: email_app_channels
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command:
+      - /bin/sh
+      - -c
+      - "redis-server"

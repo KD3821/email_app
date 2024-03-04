@@ -1,3 +1,5 @@
+import shortuuid
+
 from django.utils import timezone
 from django.db import models
 from django.db.models import CharField, TextField, DateTimeField, ForeignKey, JSONField, DecimalField
@@ -73,10 +75,17 @@ class Message(models.Model):
     customer = ForeignKey(Customer, verbose_name='Клиент', on_delete=models.SET_NULL, null=True, blank=True, related_name='messages')
     sent_at = DateTimeField(default=timezone.now, verbose_name='Время отправки')
     status = CharField(max_length=15, choices=MESSAGE_STATUSES, default=PROCESSING, verbose_name='Статус отправки')
+    uuid = CharField(max_length=50, verbose_name='UUID', null=True, blank=True)
 
     class Meta:
         verbose_name = 'Сообщение'
         verbose_name_plural = 'Сообщения'
+
+    def save(self, *args, **kwargs):
+        if self.uuid is None:
+            short_uuid = shortuuid.uuid()
+            self.uuid = f'MSG-{short_uuid}-{str(self.pk)}'
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.campaign} [{self.customer}]'

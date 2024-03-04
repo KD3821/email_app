@@ -84,7 +84,9 @@ class CampaignMessagesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = [
+            'id',
             'customer',
             'sent_at',
-            'status'
+            'status',
+            'uuid'
         ]

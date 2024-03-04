@@ -14,7 +14,7 @@ from .serializers import (
 
 
 class CampaignViewSet(ModelViewSet):
-    permission_classes = [IsOwner, OAuthPermission]
+    permission_classes = [IsOwner]  # , OAuthPermission
 
     def get_queryset(self):
         return self.request.user.campaigns.order_by('id')
@@ -41,7 +41,7 @@ class CampaignViewSet(ModelViewSet):
 
 class CustomerViewSet(ModelViewSet):
     serializer_class = CustomerSerializer
-    permission_classes = [IsOwner, OAuthPermission]
+    permission_classes = [IsOwner]  # , OAuthPermission
 
     def get_queryset(self):
         return self.request.user.customers.order_by('id')

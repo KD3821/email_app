@@ -15,4 +15,4 @@ class CustomerAdmin(admin.ModelAdmin):
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ['owner', 'campaign', 'customer', 'sent_at', 'status']
+    list_display = ['owner', 'campaign', 'customer', 'sent_at', 'status', 'uuid']
