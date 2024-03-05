@@ -21,6 +21,7 @@ class ReadCustomerSerializer(serializers.ModelSerializer):
             'tz_name',
         ]
 
+
 class WriteCustomerSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -39,8 +40,23 @@ class WriteCustomerSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        validated_data['owner'] = self.context.get('request').user
-        return Customer.objects.create(**validated_data)
+        owner = self.context.get('request').user
+        phone = validated_data.get('phone')
+        if Customer.objects.filter(phone=phone, owner=owner).count() != 0:
+            raise serializers.ValidationError({'error': ['Клиент с таким номером телефона уже существует']})
+        return Customer.objects.create(**validated_data, owner=owner)
+
+    def update(self, instance, validated_data):
+        owner = self.context.get('request').user
+        phone = validated_data.get('phone', instance.phone)
+        if phone != instance.phone and Customer.objects.filter(phone=phone, owner=owner).count() != 0:
+            raise serializers.ValidationError({'error': ['Клиент с таким номером телефона уже существует']})
+        instance.phone = phone
+        instance.carrier = validated_data.get('carrier', instance.carrier)
+        instance.tag = validated_data.get('tag', instance.tag)
+        instance.tz_name = validated_data.get('tz_name', instance.tz_name)
+        instance.save()
+        return instance
 
 
 class ReadCampaignSerializer(serializers.ModelSerializer):
