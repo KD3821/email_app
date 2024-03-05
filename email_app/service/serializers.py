@@ -9,7 +9,7 @@ from .models import Campaign, Customer, Message
 logger = logging.getLogger(__name__)
 
 
-class CustomerSerializer(serializers.ModelSerializer):
+class ReadCustomerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Customer
@@ -20,6 +20,27 @@ class CustomerSerializer(serializers.ModelSerializer):
             'tag',
             'tz_name',
         ]
+
+class WriteCustomerSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Customer
+        fields = [
+            'phone',
+            'carrier',
+            'tag',
+            'tz_name'
+        ]
+
+    def validate(self, attrs):
+        phone = str(attrs.get('phone'))
+        if len(phone) != 11:
+            raise serializers.ValidationError({'error': ['Номер телефона должен содержать 11 символов.']})
+        return attrs
+
+    def create(self, validated_data):
+        validated_data['owner'] = self.context.get('request').user
+        return Customer.objects.create(**validated_data)
 
 
 class ReadCampaignSerializer(serializers.ModelSerializer):
@@ -79,7 +100,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
 
 class CampaignMessagesSerializer(serializers.ModelSerializer):
-    customer = CustomerSerializer()
+    customer = ReadCustomerSerializer()
 
     class Meta:
         model = Message

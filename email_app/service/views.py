@@ -7,7 +7,8 @@ from .paginations import CampaignMessagesPagination
 from .serializers import (
     ReadCampaignSerializer,
     WriteCampaignSerializer,
-    CustomerSerializer,
+    ReadCustomerSerializer,
+    WriteCustomerSerializer,
     MessageSerializer,
     CampaignMessagesSerializer,
 )
@@ -40,11 +41,15 @@ class CampaignViewSet(ModelViewSet):
 
 
 class CustomerViewSet(ModelViewSet):
-    serializer_class = CustomerSerializer
     permission_classes = [IsOwner]  # , OAuthPermission
 
     def get_queryset(self):
         return self.request.user.customers.order_by('id')
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return ReadCustomerSerializer
+        return WriteCustomerSerializer
 
 
 class MessageViewSet(ModelViewSet):

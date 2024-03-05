@@ -10,9 +10,11 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(OAuthAccessToken)
 class OAuthAccessAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user', 'token', 'expires_at', 'scope']
+    list_display = ['id', 'user', 'expires_at', 'scope', 'token']
+    list_filter = ['user']
 
 
 @admin.register(OAuthRefreshToken)
 class OAuthAccessAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user', 'token', 'access_token_id', 'revoked']
+    list_display = ['id', 'user', 'access_token_id', 'revoked', 'token']
+    list_filter = ['user']
