@@ -12,6 +12,8 @@ from service.views import (
     CampaignViewSet,
     CustomerViewSet,
     MessageViewSet,
+    SingleCampaignReportView,
+    AllCampaignsReportView,
 )
 
 
@@ -23,7 +25,8 @@ router.register(r'messages', MessageViewSet, basename='messages')
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/accounts/', include('accounts.urls')),
-
+    path('api/reports/', AllCampaignsReportView.as_view(), name='all_report'),
+    path('api/reports/<int:id>/', SingleCampaignReportView.as_view(), name='single_report'),
     path('api/', include(router.urls)),
 
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

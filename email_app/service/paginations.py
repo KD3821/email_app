@@ -2,7 +2,7 @@ from rest_framework.response import Response
 from rest_framework import pagination
 
 
-class CampaignMessagesPagination(pagination.PageNumberPagination):
+class CampaignCustomPagination(pagination.PageNumberPagination):
     page_size = 20
 
     def get_paginated_response(self, data):

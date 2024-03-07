@@ -127,3 +127,22 @@ class CampaignMessagesSerializer(serializers.ModelSerializer):
             'status',
             'uuid'
         ]
+
+
+class SingleCampaignReportSerializer(serializers.Serializer):  # noqa
+    date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S+03:00")
+    msg_total = serializers.IntegerField()
+    msg_ok = serializers.IntegerField()
+    msg_failed = serializers.IntegerField()
+    msg_canceled = serializers.IntegerField()
+    msg_processing = serializers.IntegerField()
+
+
+class AllCampaignsReportSerializer(serializers.Serializer):  # noqa
+    date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S+03:00")  #
+    campaign_total = serializers.IntegerField()
+    msg_total = serializers.IntegerField()
+    msg_ok = serializers.IntegerField()
+    msg_failed = serializers.IntegerField()
+    msg_canceled = serializers.IntegerField()
+    msg_processing = serializers.IntegerField()

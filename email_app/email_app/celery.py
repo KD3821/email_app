@@ -1,4 +1,5 @@
 import os
+
 from celery import Celery
 
 
@@ -10,5 +11,6 @@ app.autodiscover_tasks()
 
 """
 export DJANGO_SETTINGS_MODULE=email_app.settings
-python3 -m celery -A email_app worker -l info
+python3 -m celery -A email_app worker --loglevel=info
+python3 -m celery -A email_app beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
 """
