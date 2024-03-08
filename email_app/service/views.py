@@ -7,17 +7,18 @@ from rest_framework import serializers, status
 from .permissions import IsOwner
 from accounts.permissions import OAuthPermission
 from .models import Customer, Campaign, Message
-from .paginations import CampaignCustomPagination
+from .paginations import CustomPagination
 from .reports import get_single_campaign_data, get_all_campaigns_data
 from .serializers import (
     ReadCampaignSerializer,
     WriteCampaignSerializer,
-    ReadCustomerSerializer,
-    WriteCustomerSerializer,
-    MessageSerializer,
     CampaignMessagesSerializer,
     SingleCampaignReportSerializer,
     AllCampaignsReportSerializer,
+    ReadCustomerSerializer,
+    WriteCustomerSerializer,
+    CustomerMessagesSerializer,
+    MessageSerializer,
 )
 
 
@@ -50,7 +51,7 @@ class CampaignViewSet(ModelViewSet):
     def get_messages(self, request, *args, **kwargs):
         campaign = self.get_object()
         messages = campaign.messages.select_related('customer').order_by('id')
-        paginator = CampaignCustomPagination()
+        paginator = CustomPagination()
         result_page = paginator.paginate_queryset(messages, request)
         serializer = CampaignMessagesSerializer(result_page, many=True)
         return paginator.get_paginated_response(serializer.data)
@@ -69,7 +70,7 @@ class CampaignViewSet(ModelViewSet):
             customers = Customer.objects.filter(carrier=carrier, tag=tag).order_by('id')
         else:
             customers = Customer.objects.filter(carrier=carrier).order_by('id')
-        paginator = CampaignCustomPagination()
+        paginator = CustomPagination()
         result_page = paginator.paginate_queryset(customers, request)
         serializer = ReadCustomerSerializer(result_page, many=True)
         return paginator.get_paginated_response(serializer.data)
@@ -85,6 +86,20 @@ class CustomerViewSet(ModelViewSet):
         if self.action in ('list', 'retrieve'):
             return ReadCustomerSerializer
         return WriteCustomerSerializer
+
+    @action(
+        methods=['get'],
+        detail=True,
+        url_path='customer-messages',
+        url_name='customer'
+    )
+    def get_messages(self, request, *args, **kwargs):
+        customer = self.get_object()
+        messages = customer.messages.select_related('campaign').order_by('id')
+        paginator = CustomPagination()
+        result_page = paginator.paginate_queryset(messages, request)
+        serializer = CustomerMessagesSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class MessageViewSet(ModelViewSet):

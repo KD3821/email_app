@@ -133,6 +133,20 @@ class CampaignMessagesSerializer(serializers.ModelSerializer):
         ]
 
 
+class CustomerMessagesSerializer(serializers.ModelSerializer):
+    campaign = ReadCampaignSerializer()
+
+    class Meta:
+        model = Message
+        fields = [
+            'id',
+            'campaign',
+            'sent_at',
+            'status',
+            'uuid'
+        ]
+
+
 class SingleCampaignReportSerializer(serializers.Serializer):  # noqa
     date = serializers.DateTimeField()
     msg_total = serializers.IntegerField()
