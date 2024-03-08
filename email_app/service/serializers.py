@@ -92,6 +92,10 @@ class WriteCampaignSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 'error': [f'Время завершения рассылки не может быть в прошлом: {finish_at}']
             })
+        if instance.status != Campaign.SCHEDULED:
+            raise serializers.ValidationError({
+                'error': ['Изменение данных возможно только для запланированной рассылки']
+            })
         return attrs
 
     def create(self, validated_data):
@@ -130,7 +134,7 @@ class CampaignMessagesSerializer(serializers.ModelSerializer):
 
 
 class SingleCampaignReportSerializer(serializers.Serializer):  # noqa
-    date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S+03:00")
+    date = serializers.DateTimeField()
     msg_total = serializers.IntegerField()
     msg_ok = serializers.IntegerField()
     msg_failed = serializers.IntegerField()
@@ -139,7 +143,7 @@ class SingleCampaignReportSerializer(serializers.Serializer):  # noqa
 
 
 class AllCampaignsReportSerializer(serializers.Serializer):  # noqa
-    date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S+03:00")  #
+    date = serializers.DateTimeField()
     campaign_total = serializers.IntegerField()
     msg_total = serializers.IntegerField()
     msg_ok = serializers.IntegerField()

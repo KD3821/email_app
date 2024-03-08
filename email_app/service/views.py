@@ -2,11 +2,11 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import serializers
+from rest_framework import serializers, status
 
 from .permissions import IsOwner
 from accounts.permissions import OAuthPermission
-from .models import Customer, Campaign
+from .models import Customer, Campaign, Message
 from .paginations import CampaignCustomPagination
 from .reports import get_single_campaign_data, get_all_campaigns_data
 from .serializers import (
@@ -31,6 +31,15 @@ class CampaignViewSet(ModelViewSet):
         if self.action in ('list', 'retrieve'):
             return ReadCampaignSerializer
         return WriteCampaignSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        campaign = self.get_object()
+        if campaign.messages.filter(status=Message.OK).count() != 0:
+            raise serializers.ValidationError({
+                'error': ['Невозможно удалить рассылку с успешно отправленными сообщениями.']
+            })
+        self.perform_destroy(campaign)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         methods=['get'],

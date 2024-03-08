@@ -22,7 +22,7 @@ class Campaign(models.Model):
     finish_at = DateTimeField(verbose_name='Время завершения', null=True, blank=True)
     text = TextField(max_length=200, verbose_name='Текст сообщения')
     params = JSONField(verbose_name='Параметры выборки', null=True, blank=True)
-    status = CharField(max_length=15, choices=CAMPAIGN_STATUSES, default=LAUNCHED, verbose_name='Статус рассылки')
+    status = CharField(max_length=15, choices=CAMPAIGN_STATUSES, default=SCHEDULED, verbose_name='Статус рассылки')
 
     class Meta:
         verbose_name = 'Рассылка'
