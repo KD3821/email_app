@@ -5,7 +5,7 @@ from .models import Campaign, Customer, Message
 
 @admin.register(Campaign)
 class CampaignAdmin(admin.ModelAdmin):
-    list_display = ['id', 'owner', 'start_at', 'finish_at', 'status', 'params']
+    list_display = ['id', 'confirmed_at', 'owner', 'start_at', 'finish_at', 'status', 'params']
 
 
 @admin.register(Customer)

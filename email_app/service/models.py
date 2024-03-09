@@ -18,6 +18,7 @@ class Campaign(models.Model):
     )
     owner = ForeignKey(User, verbose_name='Владелец', on_delete=models.SET_NULL, null=True, blank=True, related_name='campaigns')
     created_at = DateTimeField(default=timezone.now, verbose_name='Дата создания')
+    confirmed_at = DateTimeField(verbose_name='Дата подтверждения/оплаты', null=True, blank=True)
     start_at = DateTimeField(verbose_name='Время запуска', null=True, blank=True)
     finish_at = DateTimeField(verbose_name='Время завершения', null=True, blank=True)
     text = TextField(max_length=200, verbose_name='Текст сообщения')
@@ -73,7 +74,7 @@ class Message(models.Model):
     owner = ForeignKey(User, verbose_name='Владелец', on_delete=models.SET_NULL, null=True, blank=True, related_name='messages')
     campaign = ForeignKey(Campaign, verbose_name='Рассылка', on_delete=models.SET_NULL, null=True, blank=True, related_name='messages')
     customer = ForeignKey(Customer, verbose_name='Клиент', on_delete=models.SET_NULL, null=True, blank=True, related_name='messages')
-    sent_at = DateTimeField(default=timezone.now, verbose_name='Время отправки')
+    sent_at = DateTimeField(verbose_name='Время отправки', null=True, blank=True)
     status = CharField(max_length=15, choices=MESSAGE_STATUSES, default=PROCESSING, verbose_name='Статус отправки')
     uuid = CharField(max_length=50, verbose_name='UUID', null=True, blank=True)
 
@@ -81,7 +82,7 @@ class Message(models.Model):
         verbose_name = 'Сообщение'
         verbose_name_plural = 'Сообщения'
 
-    def save(self, *args, **kwargs):
+    def assign_uuid(self, *args, **kwargs):
         if self.uuid is None:
             short_uuid = shortuuid.uuid()
             self.uuid = f'MSG-{short_uuid}-{str(self.pk)}'

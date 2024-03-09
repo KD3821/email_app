@@ -4,11 +4,18 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import serializers, status
 
+from django.utils import timezone
+
 from .permissions import IsOwner
 from accounts.permissions import OAuthPermission
 from .models import Customer, Campaign, Message
 from .paginations import CustomPagination
-from .reports import get_single_campaign_data, get_all_campaigns_data
+from .utils import create_messages, schedule_campaign
+from .tasks import send_message
+from .reports import (
+    get_single_campaign_data,
+    get_all_campaigns_data,
+)
 from .serializers import (
     ReadCampaignSerializer,
     WriteCampaignSerializer,
@@ -75,6 +82,29 @@ class CampaignViewSet(ModelViewSet):
         serializer = ReadCustomerSerializer(result_page, many=True)
         return paginator.get_paginated_response(serializer.data)
 
+    @action(
+        methods=['post'],
+        detail=True,
+        url_path='launch',
+        url_name='campaign'
+    )
+    def launch_campaign(self, request, *args, **kwargs):
+        campaign = self.get_object()
+        now_date = timezone.now()
+        if campaign.start_at <= now_date < campaign.finish_at:
+            campaign.status = Campaign.LAUNCHED
+            campaign.confirmed_at = now_date
+            campaign.save()
+            msg_list = create_messages(campaign)
+            for msg in msg_list:
+                send_message.delay(msg.uuid)
+        elif now_date < campaign.start_at:
+            campaign.status = Campaign.SCHEDULED
+            campaign.confirmed_at = now_date
+            campaign.save()
+            schedule_campaign(campaign.pk)
+        return Response(status=status.HTTP_201_CREATED)
+
 
 class CustomerViewSet(ModelViewSet):
     permission_classes = [IsOwner]  # , OAuthPermission
@@ -100,6 +130,15 @@ class CustomerViewSet(ModelViewSet):
         result_page = paginator.paginate_queryset(messages, request)
         serializer = CustomerMessagesSerializer(result_page, many=True)
         return paginator.get_paginated_response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        customer = self.get_object()
+        if customer.messages.filter(status=Message.OK).count() != 0:
+            raise serializers.ValidationError({
+                'error': ['Невозможно удалить клиента, которому были отправлены сообщения.']
+            })
+        self.perform_destroy(customer)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class MessageViewSet(ModelViewSet):
