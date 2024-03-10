@@ -37,7 +37,7 @@ class User(AbstractBaseUser):
     username = CharField(max_length=255)
     is_active = BooleanField(default=True)
     is_staff = BooleanField(default=False)
-    is_verified = BooleanField(default=False)
+    is_verified = BooleanField(default=True)  # keep default=False in production & change to True via email verification
     created_at = DateTimeField(default=timezone.now)
 
     objects = UserManager()
