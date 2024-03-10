@@ -31,8 +31,21 @@ def create_messages(campaign: Campaign) -> List[Message]:
     return messages
 
 
+def schedule_check_campaign(campaign_id: int):
+    interval = IntervalSchedule.objects.get(  # TODO now need to create Interval before running server
+        every=10,
+        period=IntervalSchedule.SECONDS
+    )
+    PeriodicTask.objects.create(
+        interval=interval,
+        name=f'{campaign_id}-CMPGN-CHECK',
+        task='service.tasks.check_finished_campaign',
+        args=json.dumps([campaign_id])
+    )
+
+
 def schedule_campaign(campaign_id: int):
-    interval, _ = IntervalSchedule.objects.get_or_create(
+    interval = IntervalSchedule.objects.get(  # TODO now need to create Interval before running server
         every=30,
         period=IntervalSchedule.SECONDS
     )
@@ -42,3 +55,43 @@ def schedule_campaign(campaign_id: int):
         task='service.tasks.create_send_messages',
         args=json.dumps([campaign_id])
     )
+
+
+def schedule_message(message_uuid: str):
+    interval = IntervalSchedule.objects.get(  # TODO now need to create Interval before running server
+        every=5,
+        period=IntervalSchedule.SECONDS
+    )
+    PeriodicTask.objects.get_or_create(
+        interval=interval,
+        name=message_uuid,
+        task='service.tasks.send_message',
+        args=json.dumps([message_uuid])
+    )
+
+
+def cancel_message_schedule(message_uuid: str):
+    try:
+        periodic_task = PeriodicTask.objects.filter(name=message_uuid)[0:1].get()
+        periodic_task.enabled = False
+        periodic_task.save()
+    except PeriodicTask.DoesNotExist:
+        pass
+
+
+def cancel_campaign_schedule(campaign_id: int):
+    try:
+        periodic_task = PeriodicTask.objects.get(name=f'{campaign_id}-CMPGN')
+        periodic_task.enabled = False
+        periodic_task.save()
+    except PeriodicTask.DoesNotExist:
+        pass
+
+
+def cancel_campaign_check(campaign_id: int):
+    try:
+        periodic_task = PeriodicTask.objects.get(name=f'{campaign_id}-CMPGN-CHECK')
+        periodic_task.enabled = False
+        periodic_task.save()
+    except PeriodicTask.DoesNotExist:
+        pass

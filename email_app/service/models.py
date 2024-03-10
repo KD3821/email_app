@@ -11,10 +11,12 @@ class Campaign(models.Model):
     LAUNCHED = 'launched'
     SCHEDULED = 'scheduled'
     CANCELED = 'canceled'
+    FINISHED = 'finished'
     CAMPAIGN_STATUSES = (
         (LAUNCHED, 'запущена'),
         (SCHEDULED, 'запланирована'),
-        (CANCELED, 'отменена')
+        (CANCELED, 'отменена'),
+        (FINISHED, 'завершена')
     )
     owner = ForeignKey(User, verbose_name='Владелец', on_delete=models.SET_NULL, null=True, blank=True, related_name='campaigns')
     created_at = DateTimeField(default=timezone.now, verbose_name='Дата создания')

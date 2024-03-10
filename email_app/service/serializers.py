@@ -65,6 +65,7 @@ class ReadCampaignSerializer(serializers.ModelSerializer):
         model = Campaign
         fields = [
             'id',
+            'confirmed_at',
             'start_at',
             'finish_at',
             'text',
@@ -92,9 +93,9 @@ class WriteCampaignSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 'error': [f'Время завершения рассылки не может быть в прошлом: {finish_at}']
             })
-        if instance.status != Campaign.SCHEDULED:
+        if instance is not None and instance.status != Campaign.SCHEDULED:
             raise serializers.ValidationError({
-                'error': ['Изменение данных возможно только для запланированной рассылки']
+                'error': ['Изменение данных невозможно - рассылка уже запущена, завершена или отменена']
             })
         return attrs
 
