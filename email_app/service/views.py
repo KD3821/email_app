@@ -1,5 +1,6 @@
+import stripe
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import serializers, status
@@ -8,9 +9,16 @@ from django.utils import timezone
 
 from .permissions import IsOwner
 from accounts.permissions import OAuthPermission
-from .models import Customer, Campaign, Message
+from .models import Customer, Campaign, Message, Invoice
 from .paginations import CustomPagination
 from .tasks import send_message
+from .payments import (
+    create_checkout_session,
+    endpoint_secret,
+    publishable_key,
+    create_invoice,
+    pay_invoice,
+)
 from .utils import (
     create_messages,
     schedule_campaign,
@@ -99,7 +107,9 @@ class CampaignViewSet(ModelViewSet):
         if campaign.confirmed_at is not None:
             raise serializers.ValidationError({'error': ['Рассылка уже подтверждена.']})
         now_date = timezone.now()
-        if campaign.start_at <= now_date < campaign.finish_at:
+        if now_date > campaign.finish_at:
+            raise serializers.ValidationError({'error': ['Время завершения рассылки уже наступило.']})
+        elif campaign.start_at <= now_date < campaign.finish_at:
             msg_list = create_messages(campaign)
             if not msg_list:
                 raise serializers.ValidationError({
@@ -136,6 +146,26 @@ class CampaignViewSet(ModelViewSet):
         cancel_campaign_check(campaign.pk)
         return Response(
             {'cancel_data': 'Рассылка будет остановлена'},
+            status=status.HTTP_200_OK
+        )
+
+    @action(
+        methods=['get'],
+        detail=True,
+        url_path='checkout',
+        url_name='campaign'
+    )
+    def pay_campaign(self, request, *args, **kwargs):
+        campaign = self.get_object()
+        if campaign.invoices.filter(status=Invoice.PAID).count() != 0:
+            raise serializers.ValidationError({'error': ['Рассылка уже оплачена.']})
+        invoice = create_invoice(campaign)
+        invoice.assign_invoice_number()
+        session_id = create_checkout_session(campaign.pk, invoice.invoice_number)
+        invoice.checkout_session_id = session_id
+        invoice.save(update_fields=['checkout_session_id'])
+        return Response(
+            {'session_id': session_id},
             status=status.HTTP_200_OK
         )
 
@@ -206,3 +236,52 @@ class AllCampaignsReportView(APIView):
         report_data = get_all_campaigns_data(request.user)
         serializer = AllCampaignsReportSerializer(instance=report_data)
         return Response(serializer.data)
+
+
+@api_view(['GET'])
+def get_publishable_key(request):
+    return Response(
+        {'publishable_key': publishable_key},
+        status=status.HTTP_200_OK
+    )
+
+
+@api_view(['POST'])
+def trigger_webhook(request):
+    payload = request.body
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, endpoint_secret
+        )
+        if event.type == 'checkout.session.completed':
+            invoice_number = event.data.object.metadata.get('invoice_number')
+            payment_intent_id = event.data.object.payment_intent
+            pay_invoice(
+                invoice_number=invoice_number,
+                payment_intent_id=payment_intent_id,
+                paid_at=timezone.now()
+            )
+    except ValueError as e:
+        raise e
+    except stripe.error.SignatureVerificationError as e:
+        raise e
+    return Response(status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def checkout_result(request):
+    data = request.data
+    campaign = Campaign.objects.get(id=data.get('campaign_id'))
+    invoice = campaign.invoices.filter(status=Invoice.OPEN).order_by('id').last()
+    if invoice:
+        invoice.status = Invoice.PROCESSING
+        invoice.save(update_fields=['status'])
+        invoice_number = invoice.invoice_number
+    else:
+        invoice = campaign.invoices.filter(status=Invoice.PAID).first()
+        invoice_number = invoice.invoice_number
+    return Response(
+        {'invoice_number': invoice_number},
+        status=status.HTTP_200_OK
+    )

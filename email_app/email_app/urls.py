@@ -14,6 +14,9 @@ from service.views import (
     MessageViewSet,
     SingleCampaignReportView,
     AllCampaignsReportView,
+    get_publishable_key,
+    checkout_result,
+    trigger_webhook,
 )
 
 
@@ -27,6 +30,9 @@ urlpatterns = [
     path('api/accounts/', include('accounts.urls')),
     path('api/reports/', AllCampaignsReportView.as_view(), name='all_report'),
     path('api/reports/<int:id>/', SingleCampaignReportView.as_view(), name='single_report'),
+    path('api/config/', get_publishable_key, name='stripe_config'),
+    path('api/result/', checkout_result, name='stripe_result'),
+    path('api/webhook/', trigger_webhook, name='stripe_webhook'),
     path('api/', include(router.urls)),
 
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

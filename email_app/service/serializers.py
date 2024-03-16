@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from django.utils import timezone
 
-from .models import Campaign, Customer, Message
+from .models import Campaign, Customer, Message, Invoice
 
 logger = logging.getLogger(__name__)
 
@@ -60,18 +60,33 @@ class WriteCustomerSerializer(serializers.ModelSerializer):
 
 
 class ReadCampaignSerializer(serializers.ModelSerializer):
+    invoice_data = serializers.SerializerMethodField()
 
     class Meta:
         model = Campaign
         fields = [
             'id',
             'confirmed_at',
+            'paid_at',
             'start_at',
             'finish_at',
             'text',
             'params',
-            'status'
+            'status',
+            'invoice_data'
         ]
+
+    def get_invoice_data(self, obj):
+        try:
+            invoice = obj.invoices.filter(campaign=obj, status=Invoice.PAID)[0:1].get()
+        except Invoice.DoesNotExist:
+            invoice = obj.invoices.filter(status=Invoice.PROCESSING).first()
+        if invoice is not None:
+            return {
+                'invoice_number': invoice.invoice_number,
+                'invoice_status': invoice.status
+            }
+        return None
 
 
 class WriteCampaignSerializer(serializers.ModelSerializer):
