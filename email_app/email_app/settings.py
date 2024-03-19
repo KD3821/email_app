@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
-import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -49,8 +48,6 @@ INSTALLED_APPS = [
 
     'corsheaders',
     'rest_framework',
-    'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist',
     'silk',
     'drf_spectacular',
     'drf_spectacular_sidecar',
@@ -81,7 +78,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    # 'accounts.middleware.RequestOAuthMiddleware',
+    'accounts.middleware.RequestOAuthMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -172,7 +169,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'NON_FIELD_ERRORS_KEY': 'error',
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'accounts.authentication.CustomAuthentication'
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
@@ -182,12 +179,6 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20
 }
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(minutes=5),
-    'REFRESH_TOKEN_LIFETIME': datetime.timedelta(minutes=20),
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': False,
-}
 
 CELERY_BROKER_URL = f'amqp://{HOST}:5672'
 CELERY_RESULT_BACKEND = 'django-db'

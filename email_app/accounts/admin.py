@@ -5,7 +5,7 @@ from .models import User, OAuthAccessToken, OAuthRefreshToken
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ['email', 'username', 'is_active', 'is_staff', 'created_at', 'is_verified']
+    list_display = ['email', 'is_active', 'is_staff', 'created_at', 'is_verified']
 
 
 @admin.register(OAuthAccessToken)
