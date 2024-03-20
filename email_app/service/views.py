@@ -8,7 +8,6 @@ from rest_framework import serializers, status
 from django.utils import timezone
 
 from .permissions import IsOwner
-from accounts.permissions import OAuthPermission
 from .models import Customer, Campaign, Message, Invoice
 from .paginations import CustomPagination
 from .tasks import send_message
@@ -44,7 +43,7 @@ from .serializers import (
 
 
 class CampaignViewSet(ModelViewSet):
-    permission_classes = [IsOwner]  # , OAuthPermission
+    permission_classes = [IsOwner]
 
     def get_queryset(self):
         return self.request.user.campaigns.order_by('id')
@@ -107,7 +106,7 @@ class CampaignViewSet(ModelViewSet):
         if campaign.confirmed_at is not None:
             raise serializers.ValidationError({'error': ['Рассылка уже подтверждена.']})
         now_date = timezone.now()
-        if now_date > campaign.finish_at:
+        if now_date >= campaign.finish_at:
             raise serializers.ValidationError({'error': ['Время завершения рассылки уже наступило.']})
         elif campaign.start_at <= now_date < campaign.finish_at:
             msg_list = create_messages(campaign)
@@ -171,7 +170,7 @@ class CampaignViewSet(ModelViewSet):
 
 
 class CustomerViewSet(ModelViewSet):
-    permission_classes = [IsOwner]  # , OAuthPermission
+    permission_classes = [IsOwner]
 
     def get_queryset(self):
         return self.request.user.customers.order_by('id')
