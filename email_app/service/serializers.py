@@ -1,12 +1,8 @@
-import logging
-
 from rest_framework import serializers
 
 from django.utils import timezone
 
 from .models import Campaign, Customer, Message
-
-logger = logging.getLogger(__name__)
 
 
 class ReadCustomerSerializer(serializers.ModelSerializer):
@@ -36,21 +32,27 @@ class WriteCustomerSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         phone = str(attrs.get('phone'))
         if len(phone) != 11:
-            raise serializers.ValidationError({'error': ['Номер телефона должен содержать 11 символов.']})
+            raise serializers.ValidationError({
+                'error': ['Номер телефона должен содержать 11 символов.']
+            })
         return attrs
 
     def create(self, validated_data):
         owner = self.context.get('request').user
         phone = validated_data.get('phone')
         if Customer.objects.filter(phone=phone, owner=owner).count() != 0:
-            raise serializers.ValidationError({'error': ['Клиент с таким номером телефона уже существует']})
+            raise serializers.ValidationError({
+                'error': ['Клиент с таким номером телефона уже существует']
+            })
         return Customer.objects.create(**validated_data, owner=owner)
 
     def update(self, instance, validated_data):
         owner = self.context.get('request').user
         phone = validated_data.get('phone', instance.phone)
         if phone != instance.phone and Customer.objects.filter(phone=phone, owner=owner).count() != 0:
-            raise serializers.ValidationError({'error': ['Клиент с таким номером телефона уже существует']})
+            raise serializers.ValidationError({
+                'error': ['Клиент с таким номером телефона уже существует']
+            })
         instance.phone = phone
         instance.carrier = validated_data.get('carrier', instance.carrier)
         instance.tag = validated_data.get('tag', instance.tag)
@@ -89,7 +91,6 @@ class WriteCampaignSerializer(serializers.ModelSerializer):
         instance = getattr(self, 'instance', None)
         finish_at = attrs.get('finish_at')
         if finish_at <= timezone.now():
-            logger.info(f'Время завершения рассылки [{instance}] указано не верно: [{finish_at}]')
             raise serializers.ValidationError({
                 'error': [f'Время завершения рассылки не может быть в прошлом: {finish_at}']
             })

@@ -25,7 +25,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'email': ['Некорректный email']}
             )
-        attrs['email'] = email.lower()  # try
+        attrs['email'] = email.lower()
         return attrs
 
     def create(self, validated_data):

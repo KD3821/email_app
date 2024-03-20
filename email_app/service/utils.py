@@ -15,7 +15,7 @@ def create_messages(campaign: Campaign) -> List[Message]:
     tag_filter = campaign.params.get('tag')
     campaign_customers = Customer.objects.filter(owner=owner, carrier=carrier_filter)
     if tag_filter is not None:
-        campaign_customers.filter(tag=tag_filter)
+        campaign_customers = campaign_customers.filter(tag=tag_filter)
     now_date = timezone.now()
     for customer in campaign_customers:
         new_message = Message.objects.create(

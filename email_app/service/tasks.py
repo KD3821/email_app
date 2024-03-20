@@ -15,7 +15,6 @@ from django.utils import timezone
 from .models import Message, Campaign
 from .utils import (
     create_messages,
-    schedule_message,
     schedule_check_campaign,
     cancel_message_schedule,
     cancel_campaign_schedule,
@@ -85,12 +84,10 @@ def send_message(message_uuid: str, seconds_for_retry: int = 60):  # retry to se
                 headers=auth
             )
         except (urllib3.exceptions.MaxRetryError, requests.exceptions.ConnectionError):
-            schedule_message(message_uuid)
             logger.info(
-                f'Ошибка сети при отправке сообщения [{message_uuid}] - запланирована повторная отправка в [{now_date}]'
+                f'Сбой HTTP соединения в [{now_date}] при отправке сообщения [{message_uuid}] - будет повторная попытка'
             )
             return message_uuid
-
         if response.status_code == requests.codes.ok:
             cancel_message_schedule(message_uuid)
             msg.status = Message.OK
@@ -106,8 +103,9 @@ def send_message(message_uuid: str, seconds_for_retry: int = 60):  # retry to se
             return message_uuid
 
         else:
-            schedule_message(message_uuid)
-            logger.info(f'Сбой отправки сообщения [{message_uuid}] - запланирована повторная отправка в [{now_date}]')
+            logger.info(
+                f'Сбой отправки сообщения [{message_uuid}] в [{now_date}]: код ответа != "200" - будет повторная попытка'
+            )
             return message_uuid
 
     elif now_date >= msg.campaign.finish_at:

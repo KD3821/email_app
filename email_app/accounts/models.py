@@ -4,7 +4,6 @@ from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db.models import EmailField, BooleanField, DateTimeField, CharField, ForeignKey
 from django.contrib.auth.hashers import make_password, identify_hasher
 from django.utils import timezone
-from django.db import models
 
 
 class UserManager(BaseUserManager):
@@ -74,25 +73,3 @@ class User(AbstractBaseUser):
 
     def __str__(self):
         return self.email
-
-
-class OAuthAccessToken(models.Model):
-    user = ForeignKey(User, on_delete=models.CASCADE, verbose_name='Для пользователя')
-    token = CharField(max_length=300, verbose_name='OAuth Access')
-    expires_at = DateTimeField(verbose_name='Годен до')
-    scope = CharField(max_length=100, verbose_name='Scope')
-
-    class Meta:
-        verbose_name = 'OAuth Access Токен'
-        verbose_name_plural = 'OAuth Access Токены'
-
-
-class OAuthRefreshToken(models.Model):
-    user = ForeignKey(User, on_delete=models.CASCADE, verbose_name='Для пользователя')
-    token = CharField(max_length=300, verbose_name='OAuth Refresh')
-    access_token = ForeignKey(OAuthAccessToken, on_delete=models.CASCADE, verbose_name='Access', related_name='refresh')
-    revoked = BooleanField(default=False)
-
-    class Meta:
-        verbose_name = 'OAuth Refresh Токен'
-        verbose_name_plural = 'OAuth Refresh Токены'
