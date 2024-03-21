@@ -15,8 +15,10 @@ from django.utils import timezone
 from .models import Message, Campaign
 from .utils import (
     create_messages,
+    schedule_message,
     schedule_check_campaign,
     cancel_message_schedule,
+    resume_message_schedule,
     cancel_campaign_schedule,
     cancel_campaign_check,
 )
@@ -35,9 +37,9 @@ auth = {'Authorization': f'Bearer {api_key}'}
 def send_message(message_uuid: str, seconds_for_retry: int = 60):  # retry to send during 1 min
     now_date = timezone.now()
     msg = Message.objects.get(uuid=message_uuid)
+    cancel_message_schedule(message_uuid)
 
     if msg.campaign.status == Campaign.CANCELED:
-        cancel_message_schedule(message_uuid)
         msg.status = Message.CANCELED
         msg.save()
         async_to_sync(channel_layer.group_send)(
@@ -51,7 +53,6 @@ def send_message(message_uuid: str, seconds_for_retry: int = 60):  # retry to se
         return message_uuid
 
     elif (now_date - msg.sent_at) >= datetime.timedelta(seconds=seconds_for_retry):
-        cancel_message_schedule(message_uuid)
         msg.status = Message.FAILED
         msg.save()
         async_to_sync(channel_layer.group_send)(
@@ -87,9 +88,10 @@ def send_message(message_uuid: str, seconds_for_retry: int = 60):  # retry to se
             logger.info(
                 f'Сбой HTTP соединения в [{now_date}] при отправке сообщения [{message_uuid}] - будет повторная попытка'
             )
+            resume_message_schedule(message_uuid)
             return message_uuid
+
         if response.status_code == requests.codes.ok:
-            cancel_message_schedule(message_uuid)
             msg.status = Message.OK
             msg.save()
             async_to_sync(channel_layer.group_send)(
@@ -106,10 +108,10 @@ def send_message(message_uuid: str, seconds_for_retry: int = 60):  # retry to se
             logger.info(
                 f'Сбой отправки сообщения [{message_uuid}] в [{now_date}]: код ответа != "200" - будет повторная попытка'
             )
+            resume_message_schedule(message_uuid)
             return message_uuid
 
     elif now_date >= msg.campaign.finish_at:
-        cancel_message_schedule(message_uuid)
         msg.status = Message.CANCELED
         msg.save()
         async_to_sync(channel_layer.group_send)(
@@ -138,7 +140,7 @@ def create_send_messages(campaign_id: int):
         campaign.save()
         message_list = create_messages(campaign)
         for msg in message_list:
-            send_message.delay(msg.uuid)
+            schedule_message(msg.uuid)
         cancel_campaign_schedule(campaign_id)
         schedule_check_campaign(campaign_id)
         logger.info(f'Рассылка [{campaign_id}] стартовала в [{now_date}]. Кол-во сообщений: {len(message_list)}')

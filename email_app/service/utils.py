@@ -62,7 +62,7 @@ def schedule_message(message_uuid: str):
         every=5,
         period=IntervalSchedule.SECONDS
     )
-    PeriodicTask.objects.get_or_create(
+    PeriodicTask.objects.create(
         interval=interval,
         name=message_uuid,
         task='service.tasks.send_message',
@@ -71,27 +71,24 @@ def schedule_message(message_uuid: str):
 
 
 def cancel_message_schedule(message_uuid: str):
-    try:
-        periodic_task = PeriodicTask.objects.filter(name=message_uuid)[0:1].get()
-        periodic_task.enabled = False
-        periodic_task.save()
-    except PeriodicTask.DoesNotExist:
-        pass
+    periodic_task = PeriodicTask.objects.get(name=message_uuid)
+    periodic_task.enabled = False
+    periodic_task.save()
+
+
+def resume_message_schedule(message_uuid: str):
+    periodic_task = PeriodicTask.objects.get(name=message_uuid)
+    periodic_task.enabled = True
+    periodic_task.save()
 
 
 def cancel_campaign_schedule(campaign_id: int):
-    try:
-        periodic_task = PeriodicTask.objects.get(name=f'{campaign_id}-CMPGN')
-        periodic_task.enabled = False
-        periodic_task.save()
-    except PeriodicTask.DoesNotExist:
-        pass
+    periodic_task = PeriodicTask.objects.get(name=f'{campaign_id}-CMPGN')
+    periodic_task.enabled = False
+    periodic_task.save()
 
 
 def cancel_campaign_check(campaign_id: int):
-    try:
-        periodic_task = PeriodicTask.objects.get(name=f'{campaign_id}-CMPGN-CHECK')
-        periodic_task.enabled = False
-        periodic_task.save()
-    except PeriodicTask.DoesNotExist:
-        pass
+    periodic_task = PeriodicTask.objects.get(name=f'{campaign_id}-CMPGN-CHECK')
+    periodic_task.enabled = False
+    periodic_task.save()
