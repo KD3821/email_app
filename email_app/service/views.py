@@ -273,13 +273,17 @@ def trigger_webhook(request):
 def checkout_result(request):
     data = request.data
     campaign = Campaign.objects.get(id=data.get('campaign_id'))
+    result = data.get('result')
     invoice = campaign.invoices.filter(status=Invoice.OPEN).order_by('id').last()
-    if invoice:
-        invoice.status = Invoice.PROCESSING
-        invoice.save(update_fields=['status'])
-        invoice_number = invoice.invoice_number
+    if result:
+        if invoice:
+            invoice.status = Invoice.PROCESSING
+            invoice.save(update_fields=['status'])
+            invoice_number = invoice.invoice_number
+        else:
+            invoice = campaign.invoices.filter(status=Invoice.PAID).first()
+            invoice_number = invoice.invoice_number
     else:
-        invoice = campaign.invoices.filter(status=Invoice.PAID).first()
         invoice_number = invoice.invoice_number
     return Response(
         {'invoice_number': invoice_number},
