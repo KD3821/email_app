@@ -1,3 +1,7 @@
+"""
+for dev purpose - to check websocket connections
+"""
+
 import os
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'email_app.settings')
 
